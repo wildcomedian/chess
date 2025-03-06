@@ -50,7 +50,7 @@ public class Piece {
     //return a list of every square that is "controlled" by this piece. A square is controlled
     //if the piece capture into it legally.
     public ArrayList<Square> getControlledSquares(Square[][] board, Square start) {
-     return null;
+      return null;
     }
     
 
@@ -60,7 +60,28 @@ public class Piece {
     //returns an arraylist of squares which are legal to move to
     //please note that your piece must have some sort of logic. Just being able to move to every square on the board is not
     //going to score any points.
+
+    //INTRODUCING GAMBIT:
+    /*
+     * The Gambit introduces a new wild card to your chess tactics and strategy 
+     * It allows you to get your pieces out of danger or make them become the danger places with any other piece on the board you control on the
+     * board by simply dragging it to the square of a piece you control
+     */
     public ArrayList<Square> getLegalMoves(Board b, Square start){
-    	return null;
+    	ArrayList<Square> moves = new ArrayList<Square>();
+      
+      for (Square [] row: b.getSquareArray()){
+        for (Square potentialMove: row) {
+          //Gets rid of swapping with itself as a move
+          if ((potentialMove.getOccupyingPiece() != null) && 
+          (potentialMove != start) && 
+          (potentialMove.getOccupyingPiece().getColor() == start.getOccupyingPiece().getColor())) {
+            moves.add(potentialMove);
+          }
+        }
+      }
+      
+
+      return moves;
     }
 }
