@@ -32,8 +32,8 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
 	private static final String RESOURCES_WQUEEN_PNG = "wqueen.png";
 	private static final String RESOURCES_WPAWN_PNG = "wpawn.png";
 	private static final String RESOURCES_BPAWN_PNG = "bpawn.png";
-    private static final String RESOURCES_WGAMBIT_PNG = "wgambit.png";
-    private static final String RESOURCES_BGAMBIT_PNG = "bgambit.png";
+    private static final String RESOURCES_WACE_PNG = "wace.png";
+    private static final String RESOURCES_BACE_PNG = "bace.png";
 	
 	// Logical and graphical representations of board
 	private final Square[][] board;
@@ -106,16 +106,21 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
 	//it's up to you how you wish to arrange your pieces.
     private void initializePieces() {
     	
-    	board[4][4].put(new Piece(true, RESOURCES_WGAMBIT_PNG));
-        board[4][5].put(new Piece(false, RESOURCES_BGAMBIT_PNG));
-        board[0][1].put(new Piece(true, RESOURCES_WKING_PNG));
-        board[7][7].put(new Piece(false, RESOURCES_BKING_PNG));
-        board[0][4].put(new Piece(true, RESOURCES_WPAWN_PNG));
-        board[0][5].put(new Piece(true, RESOURCES_WQUEEN_PNG));
-        board[0][6].put(new Piece(true, RESOURCES_WBISHOP_PNG));
-        board[7][4].put(new Piece(false, RESOURCES_BBISHOP_PNG));
-        board[7][5].put(new Piece(false, RESOURCES_BKNIGHT_PNG));
-        board[7][6].put(new Piece(false, RESOURCES_BQUEEN_PNG));
+    	//board[4][4].put(new Ace(true, RESOURCES_WACE_PNG));
+        board[1][0].put(new Ace(false, RESOURCES_BACE_PNG));
+        board[1][1].put(new Ace(false, RESOURCES_BACE_PNG));
+        board[1][2].put(new Ace(false, RESOURCES_BACE_PNG));
+
+        board[0][0].put(new King(true, RESOURCES_WKING_PNG));
+        board[0][2].put(new King(false, RESOURCES_BKING_PNG));
+        board[2][0].put(new King(false, RESOURCES_BKING_PNG));
+
+        // board[0][4].put(new Piece(true, RESOURCES_WPAWN_PNG));
+        // board[0][5].put(new Piece(true, RESOURCES_WQUEEN_PNG));
+        // board[0][6].put(new Piece(true, RESOURCES_WBISHOP_PNG));
+        // board[7][4].put(new Piece(false, RESOURCES_BBISHOP_PNG));
+        // board[7][5].put(new Piece(false, RESOURCES_BKNIGHT_PNG));
+        // board[7][6].put(new Piece(false, RESOURCES_BQUEEN_PNG));
 
 
     }
@@ -192,8 +197,9 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
     public void mouseReleased(MouseEvent e) {
     
         Square endSquare = (Square) this.getComponentAt(new Point(e.getX(), e.getY()));
+        Piece endSquarePiece = endSquare.getOccupyingPiece();
         
-        if (currPiece != null && fromMoveSquare.isOccupied()  && currPiece.getColor() == whiteTurn) {
+        if ((currPiece != null) && (currPiece.getColor() == whiteTurn)) {
             for (Square [] row: board) {
                 for (Square s: row) {
                     s.setBorder(null);
@@ -201,15 +207,29 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
             }            
 
             //using currPiece
-                ArrayList<Square> legalMoves = currPiece.getLegalMoves(this, fromMoveSquare);
-                for (Square move: legalMoves) {
-                    if (endSquare == move) {
-                        fromMoveSquare.put(endSquare.getOccupyingPiece());
-                        endSquare.put(currPiece);
-                        //Turns it to the other players turn
+            ArrayList<Square> legalMoves = currPiece.getLegalMoves(this, fromMoveSquare);
+            for (Square move: legalMoves) {
+                if (endSquare == move) {
+                    if(currPiece instanceof Ace){
+                        fromMoveSquare.put(endSquarePiece);
+                    }
+                    else{ //Other Pieces may operate weirdly as well so this is a generalization
+                        fromMoveSquare.removePiece();
+                    }
+                    endSquare.put(currPiece);
+                    //Turns it to the other players turn
+                    if (isInCheck(whiteTurn)) {
+                        endSquare.put(endSquarePiece);
+                        fromMoveSquare.put(currPiece);
+                    }
+                    /*else if (theyHaveNoPossibleMoves()) {
+                        g.checkmateOccurred(whiteTurn);
+                    }*/
+                    else {
                         whiteTurn = !whiteTurn;
                     }
                 }
+            }
             
     
             fromMoveSquare.setDisplay(true);
@@ -232,7 +252,6 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
                 s.setBorder(BorderFactory.createLineBorder(Color.red));
             }
         }
-        
     }
 
     @Override
@@ -251,4 +270,69 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
     public void mouseExited(MouseEvent e) {
     }
 
+    //precondition - the board is initialized and contains a king of either color. The boolean kingColor corresponds to the color of the king we wish to know the status of.
+    //postcondition - returns true of the king is in check and false otherwise.
+	public boolean isInCheck(boolean kingColor){
+        Square kingSquare = null; //Square king is on
+        ArrayList<ArrayList<Square>> arrOfControlledSquares = new ArrayList<ArrayList<Square>>(); //Array of controlled Square's arrays
+        for (Square [] row: this.getSquareArray()){ //Loops through board for each row
+            for (Square sq: row) { //Loops through rows for each square
+                if (sq.isOccupied()) { //Check if current square has a piece on it
+                    if (sq.getOccupyingPiece() instanceof King && //If piece is a king and is the same color as the inputted parameter make its square the kingSquare
+                        sq.getOccupyingPiece().getColor() == kingColor) {
+                        kingSquare = sq;
+                    }
+
+                    else if (sq.getOccupyingPiece().getColor() != kingColor) { //If piece is just an enemy piece
+                        arrOfControlledSquares.add((sq.getOccupyingPiece()).getControlledSquares(this.getSquareArray(), sq)); //Get array of squares it controls and add it to arrOfControlledSquares variable
+                    }
+                }
+            }
+        }
+
+        for (ArrayList<Square> arrSquares: arrOfControlledSquares) { //Loops through array for each array of controlled squares
+            for (Square controlledSquare: arrSquares) { //Loops through the squares of the arrays
+                if ((kingSquare != null) && (kingSquare == controlledSquare)) { //If kingSquare exist and it's a controlled square of an enemy piece king is in check
+                    return true;
+                }
+            }
+        }
+        
+		return false;
+    }
+    
+    /*
+    public boolean theyHaveNoPossibleMoves() {
+        Piece curr = null;
+        for (Square [] row: this.getSquareArray()){ //Loops through board for each row
+            for (Square sq: row) { //Loops through rows for each square
+                curr = sq.getOccupyingPiece();
+                if ((curr != null) && (curr.getColor() == !whiteTurn)) {
+                    ArrayList<Square> legalMoves = curr.getLegalMoves(this, fromMoveSquare);
+                    for (Square move: legalMoves) {
+                        if(curr instanceof Ace){
+                            fromMoveSquare.put(move.getOccupyingPiece());
+                        }
+                        else{ //Other Pieces may operate weirdly as well so this is a generalization
+                            fromMoveSquare.removePiece();
+                        }
+                        move.put(curr);
+                        
+                        if (isInCheck(!whiteTurn) == false) {
+                            move.put(move.getOccupyingPiece());
+                            fromMoveSquare.put(curr);
+                            return false;
+                        }
+                        else {
+                            move.put(move.getOccupyingPiece());
+                            fromMoveSquare.put(curr);
+                        }
+                    }
+                }
+            }  
+        }
+
+        return true;
+    }
+    */
 }

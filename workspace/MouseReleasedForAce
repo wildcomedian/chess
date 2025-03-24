@@ -1,0 +1,42 @@
+public void mouseReleased(MouseEvent e) {
+    
+    Square endSquare = (Square) this.getComponentAt(new Point(e.getX(), e.getY()));
+    Piece endSquarePiece = endSquare.getOccupyingPiece(); //Add this so that Ace knows what piece it swapped with
+    
+    if ((currPiece != null) && (currPiece.getColor() == whiteTurn)) {
+        for (Square [] row: board) {
+            for (Square s: row) {
+                s.setBorder(null);
+            }
+        }            
+
+        //using currPiece
+        ArrayList<Square> legalMoves = currPiece.getLegalMoves(this, fromMoveSquare);
+        for (Square move: legalMoves) {
+            if (endSquare == move) {
+                /*Add this conditional to make sure the swapping occurs whenever you move Ace*/
+                if(currPiece instanceof Ace){
+                    fromMoveSquare.put(endSquarePiece);
+                }
+                else{ //Other Pieces may operate weirdly as well so this is a generalization
+                    fromMoveSquare.removePiece();
+                }
+                endSquare.put(currPiece);
+                //Turns it to the other players turn
+                if (isInCheck(whiteTurn)) {
+                    endSquare.put(endSquarePiece); //I'm unsure if everyone will have/need this piece of code but just in case make sure you add this line when checking if King is in Check
+                    fromMoveSquare.put(currPiece);
+                }
+                else {
+                    whiteTurn = !whiteTurn;
+                }
+            }
+        }
+        
+
+        fromMoveSquare.setDisplay(true);
+        currPiece = null;
+        repaint();
+    }
+    
+}
