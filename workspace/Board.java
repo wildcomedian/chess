@@ -32,8 +32,20 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
 	private static final String RESOURCES_WQUEEN_PNG = "wqueen.png";
 	private static final String RESOURCES_WPAWN_PNG = "wpawn.png";
 	private static final String RESOURCES_BPAWN_PNG = "bpawn.png";
+
     private static final String RESOURCES_WACE_PNG = "wace.png";
     private static final String RESOURCES_BACE_PNG = "bace.png";
+
+    private static final String RESOURCES_ROOKROCKET_PNG = "blackrocket.png";
+
+    private static final String RESOURCES_WPOPE_PNG = "wpope.png";
+    private static final String RESOURCES_BPOPE_PNG = "bpope.png";
+
+    private static final String RESOURCES_WCHECKER_PNG = "wchecker.png";
+    private static final String RESOURCES_BCHECKER_PNG = "bchecker.png";
+
+    
+
 	
 	// Logical and graphical representations of board
 	private final Square[][] board;
@@ -106,23 +118,40 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
 	//it's up to you how you wish to arrange your pieces.
     private void initializePieces() {
     	
-    	//board[4][4].put(new Ace(true, RESOURCES_WACE_PNG));
-        board[1][0].put(new Ace(false, RESOURCES_BACE_PNG));
-        board[1][1].put(new Ace(false, RESOURCES_BACE_PNG));
-        board[1][2].put(new Ace(false, RESOURCES_BACE_PNG));
+    	//RookRockets
+        board[0][0].put(new RookRocket(true, RESOURCES_WROOK_PNG));
+        board[0][7].put(new RookRocket(true, RESOURCES_WROOK_PNG));
+        
+        board[7][0].put(new RookRocket(false, RESOURCES_BROOK_PNG));
+        board[7][7].put(new RookRocket(false, RESOURCES_WROOK_PNG));
 
-        board[0][0].put(new King(true, RESOURCES_WKING_PNG));
-        board[0][2].put(new King(false, RESOURCES_BKING_PNG));
-        board[2][0].put(new King(false, RESOURCES_BKING_PNG));
+        //Checker
+        for (int col = 0; col <= 7; col++) {
+            board[1][col].put(new Checker(true, RESOURCES_WCHECKER_PNG));
+            board[6][col].put(new Checker(false, RESOURCES_BCHECKER_PNG));
+        }
 
-        // board[0][4].put(new Piece(true, RESOURCES_WPAWN_PNG));
-        // board[0][5].put(new Piece(true, RESOURCES_WQUEEN_PNG));
-        // board[0][6].put(new Piece(true, RESOURCES_WBISHOP_PNG));
-        // board[7][4].put(new Piece(false, RESOURCES_BBISHOP_PNG));
-        // board[7][5].put(new Piece(false, RESOURCES_BKNIGHT_PNG));
-        // board[7][6].put(new Piece(false, RESOURCES_BQUEEN_PNG));
+        //Kings
+        board[0][3].put(new King(true, RESOURCES_WKING_PNG));
+        board[7][3].put(new King(false, RESOURCES_BKING_PNG));
 
+        //Ace In the Hole
+        board[0][4].put(new Ace(true, RESOURCES_WACE_PNG));
+        board[7][4].put(new Ace(false, RESOURCES_BACE_PNG));
 
+        //Assassin
+        board[0][2].put(new Assassin(true, RESOURCES_WBISHOP_PNG));
+        board[0][5].put(new Assassin(true, RESOURCES_WBISHOP_PNG));
+
+        board[7][2].put(new Assassin(false, RESOURCES_BBISHOP_PNG));
+        board[7][5].put(new Assassin(false, RESOURCES_BBISHOP_PNG));
+
+        //POPES
+        board[0][1].put(new Pope(true, RESOURCES_WPOPE_PNG));
+        board[0][6].put(new Pope(true, RESOURCES_WPOPE_PNG));
+
+        board[7][1].put(new Pope(false, RESOURCES_BPOPE_PNG));
+        board[7][6].put(new Pope(false, RESOURCES_BPOPE_PNG));
     }
 
     public Square[][] getSquareArray() {
@@ -177,7 +206,7 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
                 return;
             if (currPiece.getColor() && !whiteTurn)
                 return;
-            if (currPiece.getControlledSquares(board, fromMoveSquare) != null) {
+            if (currPiece.getControlledSquares(this.getSquareArray(), fromMoveSquare) != null) {
                 for (Square controlledSquare: currPiece.getControlledSquares(board, fromMoveSquare)) {
                         controlledSquare.setBorder(BorderFactory.createLineBorder(Color.magenta));
                 }
@@ -197,9 +226,10 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
     public void mouseReleased(MouseEvent e) {
     
         Square endSquare = (Square) this.getComponentAt(new Point(e.getX(), e.getY()));
-        Piece endSquarePiece = endSquare.getOccupyingPiece();
+        Piece endSquarePiece;
         
         if ((currPiece != null) && (currPiece.getColor() == whiteTurn)) {
+            endSquarePiece = endSquare.getOccupyingPiece();
             for (Square [] row: board) {
                 for (Square s: row) {
                     s.setBorder(null);
@@ -212,6 +242,37 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
                 if (endSquare == move) {
                     if(currPiece instanceof Ace){
                         fromMoveSquare.put(endSquarePiece);
+                    }
+                    else if (currPiece instanceof RookRocket){
+                        endSquare.put(fromMoveSquare.getOccupyingPiece());
+                        fromMoveSquare.removePiece(); 
+                        if (Math.random() < .2) {
+                            if (endSquare.getRow() - 1 >= 0) {
+                                board[endSquare.getRow()-1][endSquare.getCol()].put(null);
+                            }
+                            if (endSquare.getRow() + 1 <= 7) {
+                                board[endSquare.getRow()+1][endSquare.getCol()].put(null);
+                            }
+                            if (endSquare.getCol() - 1 >= 0) {
+                                board[endSquare.getRow()][endSquare.getCol()-1].put(null);
+                            }    
+                            if (endSquare.getCol() + 1 <= 7) {
+                                board[endSquare.getRow()][endSquare.getCol()+1].put(null);
+                            }
+                            if (endSquare.getRow() - 1 >= 0 && endSquare.getCol() - 1 >= 0) {
+                                board[endSquare.getRow()-1][endSquare.getCol()-1].put(null);
+                            }
+                            if (endSquare.getRow() - 1 >= 0 && endSquare.getCol() + 1 <= 7) {
+                                board[endSquare.getRow()-1][endSquare.getCol()+1].put(null);
+                            }
+                            if (endSquare.getRow() + 1 <= 7 && endSquare.getCol() - 1 >= 0) {
+                                board[endSquare.getRow()+1][endSquare.getCol()-1].put(null);
+                            }
+                            if (endSquare.getRow() + 1 <= 7 && endSquare.getCol() + 1 <= 7) {
+                                board[endSquare.getRow()+1][endSquare.getCol()+1].put(null);
+                            }
+                            board[endSquare.getRow()][endSquare.getCol()].put(null);
+                        }
                     }
                     else{ //Other Pieces may operate weirdly as well so this is a generalization
                         fromMoveSquare.removePiece();
